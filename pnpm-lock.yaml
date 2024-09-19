@@ -12,8 +12,8 @@ importers:
         specifier: 0.4.0
         version: 0.4.0
       datalogia:
-        specifier: 0.4.0
-        version: link:../datalog
+        specifier: 0.5.0
+        version: 0.5.0
     devDependencies:
       c8:
         specifier: 8.0.1
@@ -175,6 +175,10 @@ packages:
   '@gozala/co-dom@0.4.0':
     resolution: {integrity: sha512-BdaQ9kseAhhEnBbnpvr1tvwy4vGaKxiPEDTNEi9yt16VW6UPf6GdpSBobr+YoNBZOl8yBswSTcBkS8WgoY/jNg==}
 
+  '@ipld/dag-cbor@9.2.1':
+    resolution: {integrity: sha512-nyY48yE7r3dnJVlxrdaimrbloh4RokQaNRdI//btfTkcTEZbpmSrbYcBQ4VKTf8ZxXAOUJy4VsRpkJo+y9RTnA==}
+    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
+
   '@istanbuljs/schema@0.1.3':
     resolution: {integrity: sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA==}
     engines: {node: '>=8'}
@@ -188,6 +192,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@noble/hashes@1.3.3':
+    resolution: {integrity: sha512-V7/fPHgl+jsVPXqqeOzT8egNj2iBIVt+ECeMMG8TdcnTikP3oaBtUVqpT/gYCR68aEBJSF+XbYUxStjbFMqIIA==}
+    engines: {node: '>= 16'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -285,6 +293,10 @@ packages:
     resolution: {integrity: sha512-8WB3Jcas3swSvjIeA2yvCJ+Miyz5l1ZmB6HFb9R1317dt9LCQoswg/BGrmAmkWVEszSrrg4RwmO46qIm2OEnSA==}
     engines: {node: '>=16'}
 
+  cborg@4.2.3:
+    resolution: {integrity: sha512-XBFbEJ6WMfn9L7woc2t+EzOxF8vGqddoopKBbrhIvZBt2WIUgSlT8xLmM6Aq1xv8eWt4yOSjwxWjYeuHU3CpJA==}
+    hasBin: true
+
   chalk@5.3.0:
     resolution: {integrity: sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
@@ -333,6 +345,9 @@ packages:
   crypto-random-string@4.0.0:
     resolution: {integrity: sha512-x8dy3RnvYdlUcPOjkEHqozhiwzKNSq7GcPuXFbnyMOCHxX8V3OgIg/pYuabl2sbUPfIJaeAQB7PMOK8DFIdoRA==}
     engines: {node: '>=12'}
+
+  datalogia@0.5.0:
+    resolution: {integrity: sha512-6fe3LY126qAamFVeao1vzM5fdl6RmpJpD6DelKq9Q2vHM1EREspC6FZ+ObOv5RzpJFdONfPRWOzSYNv2SxLHmQ==}
 
   define-data-property@1.1.4:
     resolution: {integrity: sha512-rBMvIzlpA8v6E+SJZoo++HAYqsLrkg7MSfIinMPFhmkorw7X+dOXVJQs+QT69zGkzMyfDnIMN2Wid1+NbL3T+A==}
@@ -646,6 +661,9 @@ packages:
   mrmime@2.0.0:
     resolution: {integrity: sha512-eu38+hdgojoyq63s+yTpN4XMBdt5l8HhMhc4VKLO9KM5caLIBvUm4thi7fFaxyTmCKeNnXZ5pAlBwCUnhA09uw==}
     engines: {node: '>=10'}
+
+  multiformats@13.3.0:
+    resolution: {integrity: sha512-CBiqvsufgmpo01VT5ze94O+uc+Pbf6f/sThlvWss0sBZmAOu6GQn5usrYV2sf2mr17FWYc0rO8c/CNe2T90QAA==}
 
   nanoid@5.0.7:
     resolution: {integrity: sha512-oLxFY2gd2IqnjcYyOXD8XGCftpGtZP2AbHbOkthDkvRywH5ayNtPVy9YlOPcHckXzbLTCHpkb7FB+yuxKV13pQ==}
@@ -1054,6 +1072,11 @@ snapshots:
 
   '@gozala/co-dom@0.4.0': {}
 
+  '@ipld/dag-cbor@9.2.1':
+    dependencies:
+      cborg: 4.2.3
+      multiformats: 13.3.0
+
   '@istanbuljs/schema@0.1.3': {}
 
   '@jridgewell/resolve-uri@3.1.2': {}
@@ -1064,6 +1087,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@noble/hashes@1.3.3': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -1169,6 +1194,8 @@ snapshots:
 
   camelcase@8.0.0: {}
 
+  cborg@4.2.3: {}
+
   chalk@5.3.0: {}
 
   chokidar@3.6.0:
@@ -1228,6 +1255,12 @@ snapshots:
   crypto-random-string@4.0.0:
     dependencies:
       type-fest: 1.4.0
+
+  datalogia@0.5.0:
+    dependencies:
+      '@ipld/dag-cbor': 9.2.1
+      '@noble/hashes': 1.3.3
+      multiformats: 13.3.0
 
   define-data-property@1.1.4:
     dependencies:
@@ -1538,6 +1571,8 @@ snapshots:
   mri@1.2.0: {}
 
   mrmime@2.0.0: {}
+
+  multiformats@13.3.0: {}
 
   nanoid@5.0.7: {}
 
