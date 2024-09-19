@@ -2,71 +2,148 @@ import * as DB from './db.js'
 import * as UI from './ui.js'
 
 /**
+ * @typedef {object} OpenDocument
+ * @property {Document} document
+ * @property {Behavior} [as]
+ * @property {DB.Entity} [entity]
+ * @property {DB.Querier & DB.Transactor} [db]
+ *
+ * @param {{Document: OpenDocument}} input
+ */
+export const open = async (input) => {
+  if (input.Document) {
+    const { document, as, entity, db } = input.Document
+    const params = new URLSearchParams(document.location.search)
+    const session = {
+      state: Object.create(null),
+      entity: entity ?? openEntity(params),
+      as: as ?? (await openBehavior(params)),
+      db: db ?? (await openDatabase(params)),
+      mount: document.createElement('noscript'),
+    }
+    await onInteractive(document)
+    document.body.appendChild(session.mount)
+    await run(session)
+  }
+}
+
+/**
+ * @param {Document} document
+ * @returns {Promise<unknown>}
+ */
+const onInteractive = async (document) => {
+  switch (document.readyState) {
+    case 'loading':
+      return new Promise((resolve) =>
+        document.addEventListener('DOMContentLoaded', resolve)
+      )
+    case 'interactive':
+      return {}
+    case 'complete':
+      return {}
+  }
+}
+
+/**
+ * @param {URLSearchParams} params
+ */
+const openBehavior = (params) =>
+  loadBehavior(params.get('as') ?? './todo.behavior.js')
+
+/**
+ * @param {string} as
+ * @returns {Promise<Behavior>}
+ */
+const loadBehavior = async (as) => {
+  if (as.length > 0) {
+    const url = new URL(as, import.meta.url)
+    const module = await import(url.href)
+    return module.default
+  } else {
+    throw new Error('Behavior must be specified using `as` query parameter.')
+  }
+}
+
+/**
+ * @param {URLSearchParams} params
+ */
+export const openEntity = (params) => {
+  const entity = params.get('entity') ?? ''
+  if (entity.length > 0) {
+    return DB.Constant.Link.fromJSON({ '/': entity })
+  } else {
+    return DB.Constant.Link.of({})
+  }
+}
+
+/**
+ *
+ * @param {URLSearchParams} params
+ */
+export const openDatabase = async (params) => {
+  // TODO: Actually use some database here
+  return DB.Memory.create([])
+}
+
+/**
+ * This function does not serve any other purpose but to activate TS type
+ * inference specifically it ensures that rule `update` functions infer it's
+ * arguments from the rules `select`.
+ *
  * @template {Record<string, any>} Source
- * @param {{[K in keyof Source]: Behavior<Source[K]>}} behavior
- * @returns {{[K in keyof Source]: Behavior<Source[K]>}}
+ * @param {{[K in keyof Source]: Rule<Source[K]>}} behavior
+ * @returns {{[K in keyof Source]: Rule<Source[K]>}}
  */
 export const be = (behavior) => behavior
 
 /**
+ * Behavior is a set of named rules for an entity referenced by the `?`
+ * variable that defines its behavior in relation to state changes.
+ *
+ * @template {Record<string, any>} [Rules=Record<string, Rule>]
+ * @typedef {{[Name in keyof Rules]: Rule<Rules[Name]['select']>}} Behavior
+ */
+
+/**
+ * Rule defines a specific behavior for an entity referenced by the `?`
+ * variable. It provides a selector to query entity and relevant relations
+ * and provides an update logic that submits new facts to the database when
+ * when result of the selector changes.
+ *
  * @template {DB.Selector} [Select=DB.Selector]
- * @typedef {object} Behavior
+ * @typedef {object} Rule
  * @property {DB.Clause[]} where
  * @property {Select} select
  * @property {(input:DB.InferBindings<Select>) => DB.Transaction} update
  */
 
 /**
- * @template {DB.Selector} Select
- * @typedef {{
- *   select: Select
- *    where: DB.Clause[]
- *   update(me:Be<Select>): DB.Transaction
- * }} Be
- */
-
-/**
+ * Represents state of the activated entity in the running system.
+ *
+ * @template {Record<string, any>} [Model=Record<string, any>]
  * @typedef {object} Session
- * @property {HTMLElement} mount
- * @property {Record<string, Behavior>} as
- * @property {DB.Entity} entity
- * @property {DB.Querier & DB.Transactor} db
- * @property {Record<string, any>} state
+ * @property {DB.Entity} entity - Entity session operates on.
+ * @property {Behavior} as - Behavior used by the session.
+ * @property {HTMLElement} mount - Target HTML element session is rendered into.
+ * @property {DB.Querier & DB.Transactor} db - Database session operates on.
+ * @property {Model} state - State of the session.
  */
 
 /**
- * @param {object} input
- * @param {Record<string, Behavior>} input.as
- * @param {DB.Entity} [input.entity]
- * @param {Record<string, any>} [input.state]
- * @param {HTMLElement} [input.mount]
- */
-export const launch = ({
-  as,
-  entity = DB.Constant.Link.of({}),
-  state = Object.create(null),
-  mount = document.body.appendChild(document.createElement('noscript')),
-}) => {
-  const db = DB.Memory.create([[entity, 'complete', false]])
-
-  const session = {
-    as,
-    entity,
-    db,
-    state,
-    mount,
-  }
-
-  run(session)
-}
-
-/**
+ * Runs the session update cycle. It will evaluate behavior rules and update db
+ * with new facts and repeat the cycle until no new facts are derived. At the
+ * end of the cycle updated session state is rendered into the DOM.
+ *
+ * ℹ️ User interaction with DOM kick off new run update cycles.
+ *
  * @param {Session} session
  */
 export const run = async (session) => {
   console.groupCollapsed('📫 Evaluate behaviors', session.as)
+  // Evaluates session behavior rules and transacts new derived facts until
+  // no new facts are produced.
   while (true) {
-    const changes = step(session)
+    const changes = evaluate(session)
     if (changes.length > 0) {
       await session.db.transact(changes)
     } else {
@@ -75,18 +152,18 @@ export const run = async (session) => {
   }
   console.groupEnd()
 
+  // Once update loop has settled renders the session into the DOM.
   render(session)
 }
 
 /**
- * @param {object} input
- * @param {DB.Entity} input.entity
- * @param {Record<string, Behavior>} input.as
- * @param {DB.Querier & DB.Transactor} input.db
- * @param {Record<string, any>} input.state
- * @returns
+ * Evaluates session by computing rule selectors and running update functions
+ * for the rules whose selectors produced different results. All updates are
+ * collected into a list of instructions and returned by the function.
+ *
+ * @param {Session} input
  */
-export const step = ({ entity, as, db, state }) => {
+export const evaluate = ({ entity, as, db, state }) => {
   /** @type {DB.Clause[]} */
   const context = [{ Is: [DB.self, entity] }]
   const translation = []
@@ -119,6 +196,9 @@ export const step = ({ entity, as, db, state }) => {
 }
 
 /**
+ * Dispatches a fact produced by the event listener onto the session, which will
+ * kick off the new run loop cycle.
+ *
  * @param {Session} session
  * @param {[DB.Entity, string, object]} fact
  */
@@ -132,7 +212,7 @@ export const dispatch = async (session, fact) => {
   // react and update the count. Since count is updated it will re-run
   // behavior incrementing count again and so on. By retracting handled
   // event we break such loops.
-  const transaction = [UI.retract(fact), ...step(session)]
+  const transaction = [UI.retract(fact), ...evaluate(session)]
   // Clear up event
   await session.db.transact(transaction)
   // And rerun the system
@@ -140,6 +220,8 @@ export const dispatch = async (session, fact) => {
 }
 
 /**
+ * Renders entities `/common/ui` attribute into the session mount point, wiring
+ * event listeners such they will dispatch derived facts onto the session.
  *
  * @param {Session} session
  */

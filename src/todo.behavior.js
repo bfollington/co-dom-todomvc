@@ -16,11 +16,6 @@ export default System.be({
    * Derives default title for the todo item.
    */
   defaultTitle: {
-    /**
-     * @typedef {object} DefaultTitle
-     * @property {DB.Entity} self
-     * @property {string} title
-     */
     select: { self: DB.self, title },
     /**
      * @type {DB.Clause[]}

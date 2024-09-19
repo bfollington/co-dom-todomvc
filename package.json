@@ -11,7 +11,8 @@
     "test:node": "entail 'test/*.spec.js'",
     "test": "npm run test:node && npm run test:web",
     "coverage": "c8 --reporter=html mocha test/**/*.spec.js && npm_config_yes=true npx st -d coverage -p 8080",
-    "check": "tsc --build"
+    "check": "tsc --build",
+    "start": "npx vite"
   },
   "keywords": [
     "virtual-dom"
