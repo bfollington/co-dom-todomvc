@@ -41,9 +41,7 @@ export default System.be({
   // Initialize the game
   initGame: {
     select: { self: DB.self },
-    where: [
-      { Not: { Case: [DB.self, 'isInitialized', isInitialized] } },
-    ],
+    where: [{ Not: { Case: [DB.self, 'isInitialized', isInitialized] } }],
     update: ({ self }) => [
       { Associate: [self, 'currentPlayer', 'X'] },
       { Associate: [self, 'gameStatus', 'ongoing'] },
@@ -62,18 +60,20 @@ export default System.be({
 
   // Handle player moves
   makeMove: {
-    select: { self: DB.self, currentPlayer, gameStatus, event },
+    select: { self: DB.self, currentPlayer, event },
     where: [
       { Case: [DB.self, 'currentPlayer', currentPlayer] },
-      { Case: [DB.self, 'gameStatus', gameStatus] },
+      { Case: [DB.self, 'gameStatus', 'ongoing'] },
       { Case: [DB.self, `/on/click`, event] },
-      { Is: [gameStatus, 'ongoing'] },
     ],
     update: ({ self, currentPlayer, event }) => {
-      const { x, y } = event.value.target.dataset;
+      const { x, y } = event.value.target.dataset
       return [
         { Associate: [self, `${x}/${y}`, currentPlayer] },
-        { Associate: [self, 'currentPlayer', currentPlayer === 'X' ? 'O' : 'X'] }
+        { Disassociate: [self, 'currentPlayer', currentPlayer] },
+        {
+          Associate: [self, 'currentPlayer', currentPlayer === 'X' ? 'O' : 'X'],
+        },
       ]
     },
   },
@@ -107,35 +107,54 @@ export default System.be({
       { Case: [DB.self, '2/1', cell21] },
       { Case: [DB.self, '2/2', cell22] },
     ],
-    update: ({ self, gameStatus, currentPlayer, cell00, cell01, cell02, cell10, cell11, cell12, cell20, cell21, cell22 }) => {
+    update: ({
+      self,
+      gameStatus,
+      currentPlayer,
+      cell00,
+      cell01,
+      cell02,
+      cell10,
+      cell11,
+      cell12,
+      cell20,
+      cell21,
+      cell22,
+    }) => {
       const cellContents = [
         [cell00, cell01, cell02],
         [cell10, cell11, cell12],
-        [cell20, cell21, cell22]
-      ];
+        [cell20, cell21, cell22],
+      ]
 
       const cells = cellContents.map((row, i) =>
-        UI.tr([], row.map((content, j) =>
-          UI.td([], [
-            UI.button(
+        UI.tr(
+          [],
+          row.map((content, j) =>
+            UI.td(
+              [],
               [
-                UI.attribute('data-x', `${i}`),
-                UI.attribute('data-y', `${j}`),
-                UI.on('click', self, `/on/click`),
-              ],
-              [UI.text(content || '_')]
+                UI.button(
+                  [
+                    UI.attribute('data-x', `${i}`),
+                    UI.attribute('data-y', `${j}`),
+                    UI.on('click', self, `/on/click`),
+                  ],
+                  [UI.text(content || '_')]
+                ),
+              ]
             )
-          ])
-        ))
-      );
+          )
+        )
+      )
 
-      const table = UI.table([], cells);
+      const table = UI.table([], cells)
 
-      const board = UI.div([], cells);
-      const status = UI.div([], [UI.text(`Status: ${gameStatus}`)]);
-      const turn = UI.div([], [UI.text(`Current player: ${currentPlayer}`)]);
+      const board = UI.div([], cells)
+      const status = UI.div([], [UI.text(`Status: ${gameStatus}`)])
+      const turn = UI.div([], [UI.text(`Current player: ${currentPlayer}`)])
 
-      return UI.swap([self, '/common/ui', UI.div([], [board, status, turn])]);
+      return UI.swap([self, '/common/ui', UI.div([], [board, status, turn])])
     },
   },
-});
+})
