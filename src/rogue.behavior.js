@@ -59,6 +59,8 @@ export default System.be({
       }
 
       return [
+        { Disassociate: [self, 'playerX', playerX] },
+        { Disassociate: [self, 'playerY', playerY] },
         { Associate: [self, 'playerX', newX] },
         { Associate: [self, 'playerY', newY] },
       ]
